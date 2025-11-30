@@ -24,7 +24,7 @@ The extension provides a complete dataset organized into logical sections:
     "id": "unique_video_id",
     "title": "Video Title",
     "description": "Video description",
-    "url": "https://www.tella.tv/watch/...",
+    "url": "https://www.tella.tv/video/.../view",
     "views": 0
   },
   "timing": {
@@ -40,7 +40,7 @@ The extension provides a complete dataset organized into logical sections:
   },
   "metadata": {
     "extractedAt": "2025-11-30T...",
-    "pageUrl": "https://www.tella.tv/watch/...",
+    "pageUrl": "https://www.tella.tv/video/.../view",
     "extractionMethod": "api"
   }
 }
@@ -63,11 +63,13 @@ The extension provides a complete dataset organized into logical sections:
 ## 📖 How to Use
 
 ### Basic Setup
-1. **Navigate to any Tella.tv video** (e.g., `https://www.tella.tv/watch/your-video-id`)
+1. **Navigate to a Tella.tv video page** - The extension only works on video pages with the `/view` URL structure (e.g., `https://www.tella.tv/video/your-video-id/view`)
 2. **Click the extension icon** in your browser toolbar
 3. **Enter your webhook URL** in the provided field
 4. **Click "Extract Data"** to pull video information
 5. **Click "Send to Webhook"** to deliver the data to your automation
+
+> **Note**: The extension requires the URL to end with `/view`. Pages without this suffix will not work.
 
 ### Webhook URL Examples
 - **Make.com**: `https://hook.eu1.make.com/your-webhook-id`
