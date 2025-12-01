@@ -36,9 +36,22 @@ Desktop.ini
 # Chrome extension store assets (keep in repo but ignore builds)
 store-assets/*.zip
 
-# Test files
-test-*.js
+# Test files and results
 test-results/
+playwright-report/
+# Playwright artifacts (screenshots/videos from test failures)
+*-actual.png
+*-diff.png
+*.webm
+# Keep test specs (*.spec.js) and test helpers - they should be committed
 
 # Playwright MCP
 .playwright-mcp/
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Claude AI settings (local)
+.claude/
