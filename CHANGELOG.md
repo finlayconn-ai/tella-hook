@@ -5,6 +5,37 @@ All notable changes to the Webhooks for Tella extension will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2024-12-01
+
+### 🚀 Major Update: Sidebar Integration
+
+#### Added
+- **Native Sidebar Integration** - Extension now appears as a native tab in Tella.tv's sidebar alongside Chapters, Transcript, and Comments
+- **SPA Navigation Support** - Seamlessly works with Tella's single-page application navigation (no page refresh needed)
+- **Enhanced Payload Fields**:
+  - `slug` - Video slug for URL-friendly identifiers
+  - `channelIDs` - Array of channel IDs associated with the video
+  - `chaptersMd` - Chapters formatted as markdown bulleted list for easy use in automation workflows
+- **Auto-Extraction** - Automatically extracts and previews video data when visiting a video page
+- **Data Preview** - Rich preview showing video metadata, chapters, and transcript counts
+- **Make.com Integration Example** - Added screenshot and documentation for Make.com workflows
+
+#### Changed
+- **UI Location** - Moved from popup to integrated sidebar tab for better UX
+- **Code Quality** - Refactored to eliminate code duplication (DRY principle)
+- **Repository Name** - Updated to "webhooks-for-tella" for clarity
+
+#### Improved
+- **Performance** - Optimized sidebar detection with targeted selectors
+- **Error Handling** - Added timeout protection for runtime messages
+- **Memory Management** - Fixed observer cleanup to prevent memory leaks
+- **Documentation** - Added project description and background story to README
+
+#### Technical
+- Consolidated interface rendering logic
+- Extracted shared payload enhancement logic into reusable method
+- Improved error recovery and fallback mechanisms
+
 ## [1.0.0] - 2024-11-30
 
 ### 🎉 Initial Release
