@@ -2,6 +2,19 @@
 
 > Extract video data from Tella.tv and send it to any webhook service (Make.com, Zapier, and more!)
 
+## About This Project
+
+As a long-time Tella user with over 1,150 videos in my account (as of December 1, 2025), I found that converting my Tella videos into blog posts, newsletters, emails, and other content was incredibly time-consuming. This Chrome extension was born out of that frustration—a simple tool that allows you to send all your video information to whatever automation tool you want using a webhook.
+
+**How it works:**
+1. Go to your favorite automation tool (Make.com, Zapier, Pipedream, etc.)
+2. Create a webhook
+3. Add that webhook URL to your Tella extension via the "Configure Webhook" button
+4. Click "Send to Webhook" on any Tella video page
+5. Your webhook will receive the payload, which you can then send to whatever tool you want
+
+**Note:** I am not in any way affiliated with the Tella team. This is simply a tool I created for myself and decided to share with anyone else who might find it useful.
+
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)]()
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Available-green.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
