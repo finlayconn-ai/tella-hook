@@ -791,11 +791,24 @@ class TellaSidebarWebhook {
       this.updateStatus('checking', 'Sending to webhook...');
 
       // Prepare payload with all extracted data
+      const contentData = this.extractedData.content || {};
+      const chapters = contentData.chapters || [];
+      const chaptersMd = this.formatChaptersAsMarkdown(chapters);
+      
+      // Create enhanced data object with chaptersMd
+      const enhancedData = {
+        ...this.extractedData,
+        content: {
+          ...contentData,
+          chaptersMd: chaptersMd
+        }
+      };
+      
       const payload = {
         event: 'tella_data_extracted',
         timestamp: new Date().toISOString(),
         source: 'tella-extension-sidebar',
-        data: this.extractedData
+        data: enhancedData
       };
 
       console.log('📡 Sending to webhook:', this.webhookUrl);
@@ -972,6 +985,57 @@ class TellaSidebarWebhook {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Format timestamp from seconds to HH:MM:SS or MM:SS with leading zeros
+   */
+  formatTimestampWithLeadingZeros(seconds) {
+    if (typeof seconds !== 'number') return '00:00';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Format chapters as markdown bulleted list
+   * Format: - 00:00 {ChapterName} - {description}
+   */
+  formatChaptersAsMarkdown(chapters) {
+    if (!chapters || !Array.isArray(chapters) || chapters.length === 0) {
+      return '';
+    }
+
+    return chapters
+      .map(chapter => {
+        // Get timestamp - prefer formatted version, or format from timestamp
+        let timestamp;
+        if (chapter.timestampFormatted) {
+          // Ensure leading zeros for consistency
+          timestamp = chapter.timestampFormatted;
+        } else if (chapter.timestamp !== undefined) {
+          timestamp = this.formatTimestampWithLeadingZeros(chapter.timestamp);
+        } else {
+          timestamp = '00:00';
+        }
+        
+        // Get title and description
+        const title = chapter.title || 'Untitled';
+        const description = chapter.description || '';
+        
+        // Format as: - 00:00 {ChapterName} - {description}
+        if (description) {
+          return `- ${timestamp} ${title} - ${description}`;
+        } else {
+          return `- ${timestamp} ${title}`;
+        }
+      })
+      .join('\n');
   }
 
   /**
@@ -1168,11 +1232,25 @@ class TellaSidebarWebhook {
   getWebhookPayload() {
     if (!this.extractedData) return null;
 
+    // Add chaptersMd to the payload
+    const contentData = this.extractedData.content || {};
+    const chapters = contentData.chapters || [];
+    const chaptersMd = this.formatChaptersAsMarkdown(chapters);
+    
+    // Create enhanced data object with chaptersMd
+    const enhancedData = {
+      ...this.extractedData,
+      content: {
+        ...contentData,
+        chaptersMd: chaptersMd
+      }
+    };
+
     return {
       event: 'tella_data_extracted',
       timestamp: new Date().toISOString(),
       source: 'tella-extension-sidebar',
-      data: this.extractedData
+      data: enhancedData
     };
   }
 
