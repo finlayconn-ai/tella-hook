@@ -742,35 +742,6 @@ class TellaSidebarWebhook {
 
       this.updateStatus('checking', 'Sending to webhook...');
 
-      // Request optional permission for webhook URL if needed
-      try {
-        const webhookUrlObj = new URL(this.webhookUrl);
-        const webhookOrigin = `${webhookUrlObj.protocol}//${webhookUrlObj.host}`;
-        
-        // Check if we already have permission
-        const hasPermission = await chrome.permissions.contains({
-          origins: [webhookOrigin + '/*']
-        });
-
-        if (!hasPermission) {
-          console.log('🔐 Requesting permission for webhook URL:', webhookOrigin);
-          this.updateStatus('checking', 'Requesting permission...');
-          
-          const granted = await chrome.permissions.request({
-            origins: [webhookOrigin + '/*']
-          });
-
-          if (!granted) {
-            throw new Error('Permission denied. Please allow access to send webhook requests.');
-          }
-          
-          console.log('✅ Permission granted for webhook URL');
-        }
-      } catch (permError) {
-        console.error('❌ Permission request error:', permError);
-        throw new Error('Could not request permission for webhook URL: ' + permError.message);
-      }
-
       // Prepare payload with all extracted data
       const payload = {
         event: 'tella_data_extracted',
