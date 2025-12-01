@@ -832,6 +832,8 @@ class TellaSidebarWebhook {
 
       console.log('📡 Sending to webhook:', this.webhookUrl);
       console.log('📦 Payload:', payload);
+      console.log('📦 Payload video.channelIDs:', payload.data?.video?.channelIDs);
+      console.log('📦 Full payload JSON:', JSON.stringify(payload, null, 2));
 
       // Send to webhook using proper promise handling with timeout
       const response = await this.sendRuntimeMessage({

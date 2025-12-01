@@ -118,6 +118,40 @@ class TellaDataExtractor {
       segments: story.segments,
       timeline: story.timeline
     });
+    
+    // Check for channel IDs in various possible field names
+    // First check top-level in story
+    let channelIDs = story.channelIDs || story.channelIds || story.channels || null;
+
+    // If story.channelIDs is null/empty, check root data object
+    if (!channelIDs || (Array.isArray(channelIDs) && channelIDs.length === 0)) {
+      channelIDs = data.channelIDs || data.channelIds || data.channels || null;
+      if (channelIDs) {
+        console.log('📺 Found channelIDs in root data object:', channelIDs);
+      }
+    }
+
+    // Handle single channelId (singular) - convert to array
+    if (!channelIDs && (story.channelId || data.channelId)) {
+      channelIDs = story.channelId || data.channelId;
+    }
+    
+    console.log('📺 Channel IDs found:', {
+      storyChannelIDs: story.channelIDs,
+      dataChannelIDs: data.channelIDs,
+      channelIds: story.channelIds || data.channelIds,
+      channelId: story.channelId || data.channelId,
+      channels: story.channels || data.channels,
+      resolved: channelIDs,
+      allStoryKeys: Object.keys(story).filter(k => k.toLowerCase().includes('channel')),
+      allDataKeys: Object.keys(data).filter(k => k.toLowerCase().includes('channel'))
+    });
+    
+    // Ensure channelIDs is always an array (never null/undefined)
+    // If it's already an array, use it; if it's a single value, wrap it; otherwise use empty array
+    const channelIDsArray = Array.isArray(channelIDs) 
+      ? channelIDs 
+      : (channelIDs !== null && channelIDs !== undefined ? [channelIDs] : []);
 
     const extractedData = {
       // Core video information
@@ -129,7 +163,7 @@ class TellaDataExtractor {
         dimensions: story.dimensions || null,
         views: story.views || 0,
         slug: story.slug || null,
-        channelIDs: Array.isArray(story.channelIDs) ? story.channelIDs : []
+        channelIDs: channelIDsArray // Always an array, never null/undefined
       },
 
       // Timing and date information
@@ -180,6 +214,9 @@ class TellaDataExtractor {
 
     cleanObject(extractedData);
 
+    // Verify channelIDs is present after cleanup
+    console.log('📺 ChannelIDs after cleanup:', extractedData.video?.channelIDs);
+    console.log('📺 Full video object:', JSON.stringify(extractedData.video, null, 2));
     console.log('✅ Comprehensive data parsed:', extractedData);
     return extractedData;
   }
