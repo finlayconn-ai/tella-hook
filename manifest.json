@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tella to Webhook",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Extract video data from Tella.tv and send to any webhook service (Make.com, Zapier, etc.)",
 
   "icons": {
@@ -23,15 +23,6 @@
     "https://*/*"
   ],
 
-  "action": {
-    "default_popup": "popup.html",
-    "default_title": "Tella → Webhook",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    }
-  },
 
   "content_scripts": [
     {
@@ -39,7 +30,8 @@
         "https://www.tella.tv/*",
         "https://tella.tv/*"
       ],
-      "js": ["content.js"],
+      "js": ["performance-monitor.js", "error-handler.js", "sidebar-injector.js", "sidebar-webhook.js", "content.js"],
+      "css": ["sidebar-styles.css"],
       "run_at": "document_idle"
     }
   ],

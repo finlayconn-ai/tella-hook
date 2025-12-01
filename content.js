@@ -58,7 +58,7 @@ class TellaDataExtractor {
   }
 
   async fetchDocumentData() {
-    const documentUrl = `/api/stories/${this.storyId}/document`;
+    const documentUrl = `https://www.tella.tv/api/stories/${this.storyId}/document`;
 
     try {
       console.log('📡 Fetching document data:', documentUrl);
@@ -79,7 +79,7 @@ class TellaDataExtractor {
   }
 
   async fetchTranscriptionData() {
-    const transcriptionUrl = `/api/stories/${this.storyId}/transcriptions`;
+    const transcriptionUrl = `https://www.tella.tv/api/stories/${this.storyId}/transcriptions`;
 
     try {
       console.log('📡 Fetching transcription data:', transcriptionUrl);
@@ -383,11 +383,19 @@ class TellaDataExtractor {
   }
 
   detectRecordingPage() {
-    // Check if we're on a Tella recording page
+    // Check if we're on a Tella recording page (must have /view or story ID in URL)
     const url = window.location.href;
-    return url.includes('/watch/') || url.includes('/recordings/') ||
-           document.querySelector('[data-testid="video-player"]') !== null ||
-           document.querySelector('.video-container') !== null;
+    
+    // Must be a specific video page, not the videos list page
+    const isVideoPage = url.includes('/video/') && (
+      url.includes('/view') ||  // Must have /view for video pages
+      url.match(/\/video\/([a-zA-Z0-9]+)$/)  // Or ends with video ID (no trailing slash)
+    );
+    
+    return url.includes('/watch/') ||
+           url.includes('/recordings/') ||
+           isVideoPage ||
+           (this.storyId !== null);  // Has a valid story ID
   }
 
   extractTitle() {
@@ -1245,15 +1253,166 @@ class TellaDataExtractor {
   }
 }
 
-// Initialize extractor when page loads
+// Initialize extractor and sidebar injector when page loads
 let extractor;
+let sidebarInjector;
 
 function initializeExtractor() {
-  extractor = new TellaDataExtractor();
+  // Check if we're on a valid video page before initializing
+  const url = window.location.href;
+  const isVideoPage = url.includes('/video/') && url.includes('/view');
+  
+  if (!isVideoPage && !url.includes('/watch/') && !url.includes('/recordings/')) {
+    console.log('ℹ️ Not a video page, skipping initialization:', url);
+    // Clean up any existing injector if navigating away from video page
+    if (sidebarInjector) {
+      console.log('🧹 Cleaning up sidebar injector (navigated away from video page)');
+      try {
+        sidebarInjector.destroy();
+      } catch (e) {
+        console.warn('⚠️ Error cleaning up injector:', e);
+      }
+      sidebarInjector = null;
+    }
+    return;
+  }
 
-  // Add visual indicator when extension is active
+  extractor = new TellaDataExtractor();
+  // Expose extractor on window for sidebar access
+  window.tellaExtractor = extractor;
+
+  // Initialize sidebar injection for valid Tella pages
   if (extractor.isRecordingPage) {
+    initializeSidebarInjection();
     addExtensionIndicator();
+
+    // Automatically extract data on page load
+    extractor.extractAllData()
+      .then(data => {
+        console.log('✅ Auto-extraction completed on page load:', data);
+        // Store data on window for sidebar access
+        window.tellaExtractedData = data;
+        // Dispatch custom event to notify sidebar
+        window.dispatchEvent(new CustomEvent('tella-data-extracted', { detail: data }));
+      })
+      .catch(error => {
+        console.error('❌ Auto-extraction failed:', error);
+      });
+  } else {
+    console.log('ℹ️ Page detected but not a valid recording page');
+  }
+}
+
+async function initializeSidebarInjection() {
+  console.log('🔧 Initializing sidebar injection for Tella page...');
+
+  // Prevent duplicate initialization
+  if (sidebarInjector) {
+    console.log('ℹ️ Sidebar injector already initialized, skipping...');
+    return;
+  }
+
+  try {
+    // Create and initialize sidebar injector
+    if (window.TellaSidebarInjector) {
+      sidebarInjector = new window.TellaSidebarInjector();
+      const injectionSuccess = await sidebarInjector.init();
+
+      if (injectionSuccess) {
+        console.log('✅ Sidebar injection successful - webhook tab added');
+
+        // Listen for webhook tab activation
+        document.addEventListener('webhookTabActivated', handleWebhookTabActivated);
+
+        // Add visual feedback
+        console.log('🎯 Webhook tab ready in Tella sidebar');
+      } else {
+        console.warn('⚠️ Sidebar injection failed - falling back to popup interface');
+      }
+    } else {
+      console.error('❌ TellaSidebarInjector not loaded - sidebar injection unavailable');
+    }
+
+  } catch (error) {
+    console.error('❌ Sidebar injection error:', error);
+  }
+}
+
+let webhookInterface;
+
+function handleWebhookTabActivated(event) {
+  console.log('🎯 Webhook tab activated:', event.detail);
+
+  // Initialize webhook interface content when tab is first clicked
+  const panel = event.detail.panel;
+
+  if (panel) {
+    // Initialize full webhook interface if not already done
+    if (!webhookInterface && window.TellaSidebarWebhook) {
+      console.log('🔧 Initializing full webhook interface...');
+
+      try {
+        webhookInterface = new window.TellaSidebarWebhook(panel);
+        webhookInterface.init();
+
+        console.log('✅ Full webhook interface loaded');
+      } catch (error) {
+        console.error('❌ Failed to initialize webhook interface:', error);
+
+        // Fallback to error display
+        panel.innerHTML = `
+          <div class="tella-webhook-content">
+            <div class="tella-webhook-header">
+              <h3>❌ Webhook Interface Error</h3>
+              <p>Failed to load webhook interface: ${error.message}</p>
+              <button onclick="location.reload()" class="tella-btn tella-btn-secondary">
+                🔄 Refresh Page
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    } else if (webhookInterface) {
+      // Interface already exists, check for new data
+      console.log('♻️ Webhook interface already initialized, checking for new data...');
+      // Reset extracted data and trigger re-extraction
+      webhookInterface.extractedData = {};
+      webhookInterface.updateStatus('checking', 'Checking for video data...');
+      // Trigger data check if extractor is available
+      if (extractor && extractor.isRecordingPage) {
+        extractor.extractAllData()
+          .then(data => {
+            window.tellaExtractedData = data;
+            window.dispatchEvent(new CustomEvent('tella-data-extracted', { detail: data }));
+            console.log('✅ Data refreshed for existing interface');
+          })
+          .catch(error => {
+            console.error('❌ Failed to refresh data:', error);
+            // Try to get data from window if available
+            if (window.tellaExtractedData) {
+              window.dispatchEvent(new CustomEvent('tella-data-extracted', { detail: window.tellaExtractedData }));
+            }
+          });
+      } else if (window.tellaExtractedData) {
+        // Use already extracted data if available
+        window.dispatchEvent(new CustomEvent('tella-data-extracted', { detail: window.tellaExtractedData }));
+      }
+    } else {
+      console.error('❌ TellaSidebarWebhook class not available');
+
+      // Fallback display
+      panel.innerHTML = `
+        <div class="tella-webhook-content">
+          <div class="tella-webhook-header">
+            <h3>⚠️ Webhook Interface Unavailable</h3>
+            <p>Webhook interface failed to load. Please refresh the page.</p>
+            <button onclick="location.reload()" class="tella-btn tella-btn-secondary">
+              🔄 Refresh Page
+            </button>
+          </div>
+        </div>
+      `;
+    }
   }
 }
 
@@ -1308,6 +1467,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Handle async extraction
       extractor.extractAllData()
         .then(data => {
+          // Store data on window for sidebar access
+          window.tellaExtractedData = data;
+          // Dispatch custom event to notify sidebar
+          window.dispatchEvent(new CustomEvent('tella-data-extracted', { detail: data }));
           sendResponse({ success: true, data });
         })
         .catch(error => {
@@ -1331,19 +1494,142 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// Initialize on load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeExtractor);
-} else {
-  initializeExtractor();
+// Only initialize on video pages with /view in URL
+function shouldInitialize() {
+  const url = window.location.href;
+  return url.includes('/video/') && url.includes('/view') ||
+         url.includes('/watch/') ||
+         url.includes('/recordings/');
 }
 
-// Re-initialize on navigation (for SPAs)
+// Initialize on load (only if on video page)
+if (shouldInitialize()) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeExtractor);
+  } else {
+    initializeExtractor();
+  }
+} else {
+  console.log('ℹ️ Not a video page, skipping extension initialization:', window.location.href);
+}
+
+// Re-initialize on navigation (for SPAs) - only on video pages
 let lastUrl = location.href;
+let urlChangeTimeout = null;
+let initializationInProgress = false;
+
+function handleUrlChange(newUrl) {
+  if (newUrl === lastUrl) return;
+  
+  const wasVideoPage = lastUrl.includes('/video/') && lastUrl.includes('/view') ||
+                      lastUrl.includes('/watch/') ||
+                      lastUrl.includes('/recordings/');
+  const isVideoPage = newUrl.includes('/video/') && newUrl.includes('/view') ||
+                     newUrl.includes('/watch/') ||
+                     newUrl.includes('/recordings/');
+  
+  console.log('🔄 URL changed:', lastUrl, '→', newUrl);
+  console.log('📍 Was video page:', wasVideoPage, 'Is video page:', isVideoPage);
+  
+  lastUrl = newUrl;
+  
+  // Clean up injector when navigating away from video page
+  if (wasVideoPage && !isVideoPage && sidebarInjector) {
+    console.log('🧹 Navigating away from video page, cleaning up injector');
+    try {
+      sidebarInjector.destroy();
+    } catch (e) {
+      console.warn('⚠️ Error destroying injector:', e);
+    }
+    sidebarInjector = null;
+    extractor = null;
+    initializationInProgress = false;
+  }
+  
+      // Only re-initialize if we're on a video page and not already initializing
+      if (isVideoPage && !initializationInProgress) {
+        initializationInProgress = true;
+        
+        // Clear old extracted data
+        window.tellaExtractedData = null;
+        extractor = null;
+        
+        // Reset webhook interface to allow re-initialization
+        if (webhookInterface) {
+          console.log('🧹 Resetting webhook interface for new video page');
+          // Reset the initialized flag so it can re-check for new data
+          if (webhookInterface.initialized !== undefined) {
+            webhookInterface.initialized = false;
+          }
+          webhookInterface = null;
+        }
+        
+        // Reset injector to allow re-injection on new page
+        if (sidebarInjector) {
+          console.log('🧹 Resetting injector for new video page');
+          try {
+            sidebarInjector.destroy();
+          } catch (e) {
+            console.warn('⚠️ Error destroying injector:', e);
+          }
+          sidebarInjector = null;
+        }
+        
+        // Wait for page to be ready, with retries
+        const maxRetries = 10;
+        let retryCount = 0;
+        
+        const tryInitialize = () => {
+          // Check if page has loaded enough content
+          const hasContent = document.querySelector('[role="tablist"]') || 
+                            document.querySelector('button') ||
+                            document.body.children.length > 5;
+          
+          if (hasContent || retryCount >= maxRetries) {
+            console.log('✅ Page ready, initializing extractor (attempt ' + (retryCount + 1) + ')');
+            initializeExtractor();
+            setTimeout(() => {
+              initializationInProgress = false;
+            }, 2000);
+          } else {
+            retryCount++;
+            console.log('⏳ Waiting for page to load... (attempt ' + retryCount + '/' + maxRetries + ')');
+            setTimeout(tryInitialize, 300);
+          }
+        };
+        
+        // Start trying after a short delay
+        setTimeout(tryInitialize, 200);
+      }
+}
+
+// Intercept pushState and replaceState (used by Next.js/React Router)
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+history.pushState = function(...args) {
+  originalPushState.apply(history, args);
+  clearTimeout(urlChangeTimeout);
+  urlChangeTimeout = setTimeout(() => handleUrlChange(location.href), 100);
+};
+
+history.replaceState = function(...args) {
+  originalReplaceState.apply(history, args);
+  clearTimeout(urlChangeTimeout);
+  urlChangeTimeout = setTimeout(() => handleUrlChange(location.href), 100);
+};
+
+// Listen for popstate (browser back/forward)
+window.addEventListener('popstate', () => {
+  clearTimeout(urlChangeTimeout);
+  urlChangeTimeout = setTimeout(() => handleUrlChange(location.href), 100);
+});
+
+// Also watch for URL changes via MutationObserver as fallback
 new MutationObserver(() => {
   const url = location.href;
   if (url !== lastUrl) {
-    lastUrl = url;
-    setTimeout(initializeExtractor, 1000); // Wait for page to load
+    clearTimeout(urlChangeTimeout);
+    urlChangeTimeout = setTimeout(() => handleUrlChange(url), 200);
   }
 }).observe(document, { subtree: true, childList: true });

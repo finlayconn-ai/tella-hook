@@ -3,10 +3,37 @@
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('📨 Background received:', request.action);
+  console.log('📦 Request data:', {
+    action: request.action,
+    hasUrl: !!request.url,
+    hasData: !!request.data,
+    dataKeys: request.data ? Object.keys(request.data) : []
+  });
 
   if (request.action === 'sendToWebhook') {
+    if (!request.url) {
+      console.error('❌ No webhook URL provided');
+      sendResponse({
+        success: false,
+        error: 'No webhook URL provided'
+      });
+      return true;
+    }
+
+    if (!request.data) {
+      console.error('❌ No data provided');
+      sendResponse({
+        success: false,
+        error: 'No data provided'
+      });
+      return true;
+    }
+
     handleSendToWebhook(request.url, request.data)
-      .then(result => sendResponse(result))
+      .then(result => {
+        console.log('✅ Webhook handler result:', result);
+        sendResponse(result);
+      })
       .catch(error => {
         console.error('❌ Webhook error:', error);
         sendResponse({
@@ -17,6 +44,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     return true; // Keep message channel open for async response
   }
+
+  // Return false if we don't handle the message
+  return false;
 });
 
 // Send data to webhook URL
