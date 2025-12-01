@@ -38,3 +38,9 @@ store-assets/*.zip
 
 # Test files
 test-*.js
+
+# Playwright MCP
+.playwright-mcp/
+
+# Playwright MCP
+.playwright-mcp/

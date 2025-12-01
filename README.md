@@ -2,9 +2,15 @@
 
 > Extract video data from Tella.tv and send it to any webhook service (Make.com, Zapier, and more!)
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)]()
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Available-green.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+## 📸 Screenshot
+
+![Tella to Webhook Extension](screenshots/extension-screenshot.png)
+
+*The extension integrates seamlessly into Tella.tv's sidebar as a native tab, allowing you to extract and send video data to any webhook service.*
 
 ## 🚀 Features
 
@@ -105,10 +111,13 @@ The extension provides a complete dataset organized into logical sections:
 ```
 tella-webhook-extension/
 ├── manifest.json          # Extension configuration
-├── popup.html            # Extension popup interface
-├── popup.js              # Popup functionality
-├── content.js            # Page content extraction
+├── content.js            # Page content extraction and data extraction
 ├── background.js         # Background service worker
+├── sidebar-injector.js   # Sidebar tab injection and integration
+├── sidebar-webhook.js    # Webhook interface and UI
+├── sidebar-styles.css    # Sidebar styling
+├── error-handler.js      # Error handling and recovery
+├── performance-monitor.js # Performance monitoring
 ├── styles.css            # Extension styling
 ├── icons/                # Extension icons
 └── README.md             # This file
