@@ -34,11 +34,14 @@ ehthumbs.db
 Desktop.ini
 
 # Chrome extension store assets (keep in repo but ignore builds)
+/store-assets/
 store-assets/*.zip
 
 # Test files and results
 test-results/
 playwright-report/
+TEST_RESULTS.md
+playwright.config.js
 # Playwright artifacts (screenshots/videos from test failures)
 *-actual.png
 *-diff.png
