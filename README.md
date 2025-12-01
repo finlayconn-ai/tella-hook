@@ -8,7 +8,7 @@
 
 ## 📸 Screenshot
 
-![Tella to Webhook Extension](screenshots/extension-screenshot.png)
+![Tella to Webhook Extension](screenshots/extension-screenshot.jpg)
 
 *The extension integrates seamlessly into Tella.tv's sidebar as a native tab, allowing you to extract and send video data to any webhook service.*
 
@@ -109,7 +109,7 @@ The extension provides a complete dataset organized into logical sections:
 
 ### Project Structure
 ```
-tella-webhook-extension/
+tella-hook/
 ├── manifest.json          # Extension configuration
 ├── content.js            # Page content extraction and data extraction
 ├── background.js         # Background service worker
@@ -120,21 +120,44 @@ tella-webhook-extension/
 ├── performance-monitor.js # Performance monitoring
 ├── styles.css            # Extension styling
 ├── icons/                # Extension icons
+├── test-extension.spec.js # Playwright test suite
+├── test-webhook-server.js  # Test webhook server
+├── playwright.config.js   # Playwright configuration
+├── package.json           # Node dependencies
 └── README.md             # This file
 ```
 
 ### Local Development
 1. Clone the repository:
    ```bash
-   git clone https://github.com/connorfinlayson/tella-webhook-extension.git
-   cd tella-webhook-extension
+   git clone https://github.com/finlayconn-ai/tella-hook.git
+   cd tella-hook
    ```
 
-2. Load the extension in Chrome (see Manual Installation above)
+2. Install dependencies (if needed):
+   ```bash
+   npm install
+   ```
 
-3. Make changes to the code
+3. Load the extension in Chrome (see Manual Installation above)
 
-4. Reload the extension in `chrome://extensions/` to test changes
+4. Make changes to the code
+
+5. Reload the extension in `chrome://extensions/` to test changes
+
+### Testing
+The project includes Playwright tests for automated testing:
+
+```bash
+# Run tests
+npm test
+
+# Run tests in headed mode (see browser)
+npm run test:headed
+
+# Debug tests
+npm run test:debug
+```
 
 ## 🛡 Privacy & Security
 
@@ -167,7 +190,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Support
 
-- **Issues**: [GitHub Issues](https://github.com/connorfinlayson/tella-webhook-extension/issues)
+- **Issues**: [GitHub Issues](https://github.com/finlayconn-ai/tella-hook/issues)
 - **Website**: [Connor Finlayson](https://www.connorfinlayson.com)
 
 ## 🙏 Acknowledgments
