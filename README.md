@@ -1,6 +1,6 @@
-# Webhooks for Tella
+# Webhooks for [Tella](https://www.connorfinlayson.com/a/tella)
 
-> Extract video data from Tella.tv and send it to any webhook service (Make.com, Zapier, and more!)
+> Extract video data from [Tella.tv](https://www.connorfinlayson.com/a/tella) and send it to any webhook service (Make.com, Zapier, and more!)
 
 ## About This Project
 

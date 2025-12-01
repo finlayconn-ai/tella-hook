@@ -218,7 +218,7 @@ class TellaSidebarWebhook {
             />
             <small>
               Paste your webhook URL from
-              <a href="https://make.com" target="_blank">Make.com</a>,
+              <a href="https://www.connorfinlayson.com/a/make" target="_blank">Make.com</a>,
               <a href="https://zapier.com" target="_blank">Zapier</a>,
               <a href="https://pipedream.com" target="_blank">Pipedream</a>,
               or any webhook service
