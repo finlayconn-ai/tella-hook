@@ -1,6 +1,6 @@
 {
   "name": "webhooks-for-tella",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "Chrome extension to extract Tella.tv video data and send to webhooks",
   "scripts": {
     "test": "playwright test",

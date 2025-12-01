@@ -118,6 +118,40 @@ class TellaDataExtractor {
       segments: story.segments,
       timeline: story.timeline
     });
+    
+    // Check for channel IDs in various possible field names
+    // First check top-level in story
+    let channelIDs = story.channelIDs || story.channelIds || story.channels || null;
+
+    // If story.channelIDs is null/empty, check root data object
+    if (!channelIDs || (Array.isArray(channelIDs) && channelIDs.length === 0)) {
+      channelIDs = data.channelIDs || data.channelIds || data.channels || null;
+      if (channelIDs) {
+        console.log('📺 Found channelIDs in root data object:', channelIDs);
+      }
+    }
+
+    // Handle single channelId (singular) - convert to array
+    if (!channelIDs && (story.channelId || data.channelId)) {
+      channelIDs = story.channelId || data.channelId;
+    }
+    
+    console.log('📺 Channel IDs found:', {
+      storyChannelIDs: story.channelIDs,
+      dataChannelIDs: data.channelIDs,
+      channelIds: story.channelIds || data.channelIds,
+      channelId: story.channelId || data.channelId,
+      channels: story.channels || data.channels,
+      resolved: channelIDs,
+      allStoryKeys: Object.keys(story).filter(k => k.toLowerCase().includes('channel')),
+      allDataKeys: Object.keys(data).filter(k => k.toLowerCase().includes('channel'))
+    });
+    
+    // Ensure channelIDs is always an array (never null/undefined)
+    // If it's already an array, use it; if it's a single value, wrap it; otherwise use empty array
+    const channelIDsArray = Array.isArray(channelIDs) 
+      ? channelIDs 
+      : (channelIDs !== null && channelIDs !== undefined ? [channelIDs] : []);
 
     const extractedData = {
       // Core video information
@@ -129,7 +163,7 @@ class TellaDataExtractor {
         dimensions: story.dimensions || null,
         views: story.views || 0,
         slug: story.slug || null,
-        channelIDs: story.channelIDs || null
+        channelIDs: channelIDsArray // Always an array, never null/undefined
       },
 
       // Timing and date information
@@ -180,6 +214,9 @@ class TellaDataExtractor {
 
     cleanObject(extractedData);
 
+    // Verify channelIDs is present after cleanup
+    console.log('📺 ChannelIDs after cleanup:', extractedData.video?.channelIDs);
+    console.log('📺 Full video object:', JSON.stringify(extractedData.video, null, 2));
     console.log('✅ Comprehensive data parsed:', extractedData);
     return extractedData;
   }
@@ -477,20 +514,37 @@ class TellaDataExtractor {
     }
 
     // Try to find multiple transcript paragraphs/segments
-    const transcriptContainer = document.querySelector('.transcript, [data-testid*="transcript"], [class*="transcript"]');
-    if (transcriptContainer) {
-      const paragraphs = transcriptContainer.querySelectorAll('p, div, span');
+    // Look for all possible transcript containers (including hidden/collapsed ones)
+    const transcriptContainers = document.querySelectorAll('.transcript, [data-testid*="transcript"], [class*="transcript"], [id*="transcript"]');
+    
+    for (const transcriptContainer of transcriptContainers) {
+      // Get all text content, including from hidden elements
+      const allTextElements = transcriptContainer.querySelectorAll('p, div, span, li');
       const transcriptParts = [];
 
-      for (const p of paragraphs) {
-        const text = p.textContent?.trim();
-        if (text && text.length > 10 && !text.includes('{') && !text.includes('transcriptionWords')) {
+      for (const element of allTextElements) {
+        const text = element.textContent?.trim();
+        // Include text even if element is hidden (display:none, etc.)
+        if (text && text.length > 10 && !text.includes('{') && !text.includes('transcriptionWords') && !text.includes('Show more') && !text.includes('Show less')) {
           transcriptParts.push(text);
         }
       }
 
+      // Also try getting direct text content of container (in case it's all in one element)
+      const containerText = transcriptContainer.textContent?.trim();
+      if (containerText && containerText.length > 50 && !containerText.includes('transcriptionWords')) {
+        // Use container text if it's longer than the sum of parts (might have more content)
+        if (containerText.length > transcriptParts.join(' ').length) {
+          return containerText;
+        }
+      }
+
       if (transcriptParts.length > 0) {
-        return transcriptParts.join(' ');
+        const combined = transcriptParts.join(' ');
+        // Only return if we got a substantial amount of text
+        if (combined.length > 100) {
+          return combined;
+        }
       }
     }
 
@@ -1215,13 +1269,28 @@ class TellaDataExtractor {
       console.log('✅ Using API data with comprehensive video metadata and chapters');
       this.data = apiData;
 
+      // Check if transcript exists in API data (content.transcription.transcript)
+      const apiTranscript = this.data.content?.transcription?.transcript;
+      
       // Add transcript from API or fallback to DOM
-      if (!this.data.transcript) {
+      // Only fallback if API transcript is missing or empty
+      if (!apiTranscript || apiTranscript.trim().length === 0) {
         const transcript = this.extractTranscript();
         if (transcript) {
-          this.data.transcript = transcript;
+          // Add to both locations for compatibility
+          if (!this.data.content) {
+            this.data.content = {};
+          }
+          if (!this.data.content.transcription) {
+            this.data.content.transcription = {};
+          }
+          this.data.content.transcription.transcript = transcript;
+          this.data.transcript = transcript; // Also add root level for backward compatibility
           this.data.extractionMethod = 'api+dom';
         }
+      } else {
+        // Ensure root-level transcript exists for backward compatibility
+        this.data.transcript = apiTranscript;
       }
 
       return this.data;
