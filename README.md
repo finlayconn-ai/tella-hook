@@ -91,6 +91,10 @@ The extension provides a complete dataset organized into logical sections:
 3. Copy the webhook URL to the extension
 4. Use the received data to trigger other actions (save to Airtable, send emails, etc.)
 
+![Make.com Integration](screenshots/make-tella-screenshot.jpg)
+
+*Example of webhook data received in Make.com, showing video metadata, chapters, transcription, and all extracted fields including the new `slug` and `channelIDs` fields.*
+
 ### Zapier Integration
 1. Create a new Zap in Zapier
 2. Choose "Webhooks by Zapier" as the trigger
